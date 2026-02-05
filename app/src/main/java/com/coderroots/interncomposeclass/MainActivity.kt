@@ -97,18 +97,5 @@ fun LoginScreen(){
             Text("Login",
                 color = colorResource(R.color.black))
         }
-
-
-
-
-
-
-
-
-
-
     }
-
-
-
 }
