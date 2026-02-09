@@ -44,6 +44,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat.enableEdgeToEdge
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 
 class DashboardActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +63,19 @@ class DashboardActivity: ComponentActivity() {
 @Preview(showSystemUi = true)
 @Composable
 fun DashboardScreen(){
-    var selectedIndex by remember { mutableStateOf(0) }
+    var selectedIndex  by remember { mutableStateOf(0) }
+    var navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+     val currentRoot = navBackStackEntry?.destination?.route?: "home"
+
+
+     selectedIndex =  when(currentRoot){
+        "home"->0
+        "setting"->1
+        "profile"->2
+        else-> 0
+    }
+
     Scaffold(
      topBar = {
          TopAppBar(
@@ -95,7 +111,8 @@ fun DashboardScreen(){
                                 interactionSource = remember { MutableInteractionSource() },
 
                                 ) {
-                                selectedIndex = 0
+                                //selectedIndex = 0
+                                navController.navigate("home")
                             }
                         )
                         Spacer(Modifier.height(5.dp))
@@ -118,7 +135,8 @@ fun DashboardScreen(){
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ){
-                            selectedIndex = 1
+                          //  selectedIndex = 1
+                            navController.navigate("setting")
                         }
                     )
                     Icon(
@@ -132,7 +150,8 @@ fun DashboardScreen(){
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ){
-                            selectedIndex = 2
+                           // selectedIndex = 2
+                            navController.navigate("profile")
                         }
                     )
                 }
@@ -141,23 +160,52 @@ fun DashboardScreen(){
 
     ) { innerPadding->
 
-        Box(Modifier.fillMaxSize().padding(innerPadding).padding(start = 20.dp, end = 20.dp),
-contentAlignment = Alignment.Center
-            ){
-            ElevatedButton(
-                onClick = {
+//        Box(Modifier.fillMaxSize().padding(innerPadding).padding(start = 20.dp, end = 20.dp),
+//contentAlignment = Alignment.Center
+//            ){
+//            ElevatedButton(
+//                onClick = {
+//
+//                },
+//                modifier = Modifier.fillMaxWidth(),
+//                shape = RoundedCornerShape(7.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = colorResource(R.color.purple_200)
+//                )
+//            ) {
+//                Text("Hello Im new Here")
+//
+//            }
+//        }
 
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(7.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.purple_200)
-                )
-            ) {
-                Text("Hello Im new Here")
-
+        NavHost(navController = navController,
+            startDestination = "home",
+            modifier = Modifier.fillMaxSize().padding(innerPadding)){
+            composable("home"){
+                HomeScreen()
             }
+            composable("setting"){
+                SettingScreen()
+            }
+            composable("setting"){
+                ProfileScreen()
+            }
+
         }
     }
+}
+
+
+@Composable
+fun HomeScreen(){
+Text("Hello Home")
+}
+
+@Composable
+fun SettingScreen(){
+
+}
+@Composable
+fun ProfileScreen(){
 
 }
