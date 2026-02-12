@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -36,10 +39,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,8 +61,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.coderroots.interncomposeclass.roomdb.StudentDao
 import com.coderroots.interncomposeclass.roomdb.StudentDatabase
 import com.coderroots.interncomposeclass.roomdb.StudentEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DashboardActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -227,18 +242,36 @@ fun DashboardScreen(){
 @Composable
 fun HomeScreen(){
     val context = LocalContext.current
-    var studentDb by remember{ mutableStateOf<StudentDatabase?>(null)}
     var showDialog by remember { mutableStateOf(false) }
+//    var studentList = remember { mutableStateListOf<StudentEntity>() }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        // Run on background thread
-        println("Check studentDb?.getInstance(context) as StudentDatabase?")
-        studentDb = studentDb?.getInstance(context) as StudentDatabase?
-    }
+    val database = StudentDatabase.getInstance(context)
+    val studentDao = database?.studentDao()
 
+   val students =  studentDao?.getStudents()?.collectAsState(initial = emptyList())
+
+    
 
     Box(Modifier.fillMaxSize()){
         Column(Modifier.fillMaxSize().padding(10.dp)) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(students?.value!!.size){index->
+                    val student = students?.value!![index]
+                    Card(Modifier.fillMaxWidth().padding(top = 10.dp),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 3.dp
+                        ),
+                        shape = RoundedCornerShape(7.dp)
+                        ) {
+                        Text(text = student.name.toString(),
+                            modifier = Modifier.fillMaxWidth().padding(20.dp),
+                            fontSize = 16.sp
+                           )
+                    }
+
+                }
+            }
 
         }
 
@@ -256,17 +289,25 @@ fun HomeScreen(){
         ShowDialogScreen(
             showDialog = showDialog,
             dismiss = {showDialog = false},
-            studentDb = studentDb
+            studentDao = studentDao,
+           // studentList = studentList
         )
     }
 }
 
 
+
 @Composable
-fun ShowDialogScreen(showDialog: Boolean, dismiss: () -> Unit, studentDb: StudentDatabase?, ) {
+fun ShowDialogScreen(
+    showDialog: Boolean,
+    dismiss: () -> Unit,
+    studentDao: StudentDao?,
+  //  studentList: SnapshotStateList<StudentEntity>,
+    ) {
     var name by remember { mutableStateOf("") }
     var rollNo by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope() // Database Api, heavy  withCOntext
     if(showDialog) {
         Dialog(
             properties = DialogProperties(
@@ -309,14 +350,21 @@ fun ShowDialogScreen(showDialog: Boolean, dismiss: () -> Unit, studentDb: Studen
                                 Toast.makeText(context,"Enter Name", Toast.LENGTH_SHORT).show()
                             }else if(rollNo.isEmpty()){
                                 Toast.makeText(context,"Enter RollNo", Toast.LENGTH_SHORT).show()
-                            }else{
+                            }else {
                                 var student = StudentEntity(
                                     name = name,
                                     rollNo = rollNo
                                 )
-                                studentDb?.studentDao()?.addStudent(student)
-                                dismiss()
-                                Toast.makeText(context,"Student Saved", Toast.LENGTH_SHORT).show()
+                                // Dispacthers.IO for Background
+                                scope.launch {
+                                   val data = withContext(Dispatchers.IO) {
+                                        studentDao?.addStudent(student)
+                                    }
+
+
+                                    dismiss()
+                                    Toast.makeText(context,"Student Saved", Toast.LENGTH_SHORT).show()
+                                }
 
                             }
                         },
