@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id ("kotlin-kapt")
 }
 
 android {
@@ -49,7 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.navigation.compose.jvmstubs)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -57,4 +58,17 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+
+    val room_version = "2.6.1" // Check for the latest version
+
+    // Room runtime
+    implementation ("androidx.room:room-runtime:$room_version")
+
+    // Annotation processor (use 'kapt' for Kotlin or 'ksp' if preferred)
+    kapt ("androidx.room:room-compiler:$room_version")
+    // Optional: Kotlin Extensions for coroutines support (room-ktx)
+    implementation( "androidx.room:room-ktx:$room_version")
+
 }
